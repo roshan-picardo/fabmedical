@@ -4,16 +4,16 @@ name: content-web
 on:
   push:
     branches:
-      - main
+    - main
     paths:
-      - 'content-web/**'
+    - 'content-web/**'
 
   # Configure workflow to also support triggering manually
   workflow_dispatch:
 
- # Environment variables are defined so that they can be used throughout the job definitions.
- env:
-  imageRepository: 'content-web'
+# Environment variables are defined so that they can be used throughout the job definitions.
+env:
+  imageRepository: 'content-api'
   resourceGroupName: 'fabmedical-pic'
   containerRegistryName: 'fabmedicalpic'
   containerRegistry: 'fabmedicalpic.azurecr.io'
@@ -22,6 +22,7 @@ on:
 
 # Jobs define the actions that take place when code is pushed to the main branch
 jobs:
+
   build-and-publish-docker-image:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
@@ -29,23 +30,13 @@ jobs:
     # Checkout the repo
     - uses: actions/checkout@main
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-
-    - name: Login to ACR
-      uses: docker/login-action@v1
+    - name: Build and push an image to container registry
+      uses: docker/build-push-action@v1
       with:
-        registry: ${{ env.containerRegistry }}
         username: ${{ secrets.ACR_USERNAME }}
         password: ${{ secrets.ACR_PASSWORD }}
-
-    - name: Build and push an image to container registry
-      uses: docker/build-push-action@v2
-      with:
-        context: ${{ env.dockerfilePath  }}
-        file: "${{ env.dockerfilePath }}/Dockerfile"
-        pull: true
-        push: true
-        tags: |
-          ${{ env.containerRegistry }}/${{ env.imageRepository }}:${{ env.tag }}
-          ${{ env.containerRegistry }}/${{ env.imageRepository }}:latest
+        path: ${{ env.dockerfilePath  }}
+        dockerfile: '${{ env.dockerfilePath }}/Dockerfile'
+        registry: ${{ env.containerRegistry }}
+        repository: ${{ env.imageRepository }}
+        tags: ${{ env.tag }},latest
